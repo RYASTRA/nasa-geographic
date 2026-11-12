@@ -7,6 +7,13 @@ const COLLECTION_ID = /^C\d+-[a-z0-9_]+$/i;
 const JOB_ID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const boundsFields = ["west", "south", "east", "north"];
 const pageSize = { collections: 9, granules: 10 };
+const polygonMediaTypes = new Map([
+  ["geojson", "application/geo+json"],
+  ["json", "application/geo+json"],
+  ["zip", "application/shapefile+zip"],
+  ["shz", "application/shapefile+zip"],
+  ["kml", "application/vnd.google-earth.kml+xml"],
+]);
 
 const state = {
   filters: null,
@@ -414,9 +421,12 @@ function makeSubsetRequest() {
     url.search = params;
     return { url };
   }
+  const extension = shape.name.split(".").pop().toLowerCase();
+  const mediaType = polygonMediaTypes.get(extension);
+  if (!mediaType) throw new Error("Choose a GeoJSON, KML, or zipped shapefile.");
   const body = new FormData();
   for (const [name, value] of params) body.append(name, value);
-  body.append("shapefile", shape);
+  body.append("shapefile", new Blob([shape], { type: mediaType }), shape.name);
   return { url, body, method: "POST" };
 }
 
