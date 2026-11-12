@@ -160,6 +160,7 @@ function chooseCollection(entry) {
   $("capabilities-list").hidden = true;
   $("variables").value = "";
   $("shape").value = "";
+  updateFormatWarning();
   $("earthdata-collection").hidden = !entry;
   feedback("capabilities-status");
   feedback("submit-status");
@@ -316,6 +317,20 @@ function search(version = "") {
   void fetchCmr("collections");
 }
 
+function updateFormatWarning() {
+  const warning = $("format-warning");
+  if (!warning) return;
+  const { selection, filters, capabilities } = state;
+  const polygon = capabilities?.shapeSubset && $("shape").files.length;
+  const clipsByArea = capabilities?.bboxSubset && filters.bounds && !polygon;
+  const clipsByDate = capabilities?.temporalSubset && (filters.start || filters.end);
+  const affected = selection?.id === "C2237824918-ORNL_CLOUD" &&
+    $("output-format").value === "application/netcdf" && (clipsByArea || clipsByDate);
+  warning.textContent = affected
+    ? "Harmony currently fails to create GEDI L4A NetCDF files with a bounding box or date filter. Choose Collection default or application/x-hdf for HDF5."
+    : "";
+}
+
 function showCapabilities(data) {
   state.capabilities = null;
   const names = [
@@ -335,6 +350,7 @@ function showCapabilities(data) {
   state.capabilities = data;
   const options = (data.outputFormats ?? []).map((format) => new Option(format, format));
   $("output-format").replaceChildren(new Option("Collection default", ""), ...options);
+  updateFormatWarning();
   $("format-label").hidden = !options.length;
   $("variable-label").hidden = !data.variableSubset;
   $("shape-label").hidden = !data.shapeSubset;
@@ -547,6 +563,8 @@ $("clear-token").addEventListener("click", () => {
   $("earthdata-token").value = "";
   $("earthdata-token").focus();
 });
+$("output-format").addEventListener("change", updateFormatWarning);
+$("shape").addEventListener("change", updateFormatWarning);
 $("subset-form").addEventListener("submit", submitSubset);
 $("job-form").addEventListener("submit", (event) => {
   event.preventDefault();

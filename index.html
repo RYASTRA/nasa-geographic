@@ -143,11 +143,12 @@
           <ul class="capabilities" id="capabilities-list" hidden></ul>
           <div id="subset-options" hidden>
             <div class="fields fields--dates">
-              <label id="format-label">Output format<select id="output-format"><option value="">Collection default</option></select></label>
+              <label id="format-label">Output format<select id="output-format" aria-describedby="format-warning"><option value="">Collection default</option></select></label>
               <label>Maximum input files
                 <input id="max-results" type="number" min="1" max="100" value="5" required>
               </label>
             </div>
+            <div role="status"><p class="feedback" id="format-warning"></p></div>
             <label id="variable-label" hidden>Variable IDs or names (optional)
               <input id="variables" placeholder="Separate variables with commas" aria-describedby="variables-help">
               <span class="hint" id="variables-help"></span>
