@@ -59,9 +59,9 @@ function failIfAborted(signal) {
   signal?.throwIfAborted();
 }
 
-async function requestJson(url, { token, signal, headers, body, method } = {}) {
+async function requestJson(url, { token, signal, headers, body, method, accept = "application/json" } = {}) {
   const requestHeaders = new Headers(headers);
-  requestHeaders.set("Accept", "application/json");
+  requestHeaders.set("Accept", accept);
   if (token) {
     if (url.origin !== HARMONY) throw new Error("The token can only be sent to NASA Harmony.");
     requestHeaders.set("Authorization", `Bearer ${token}`);
@@ -431,7 +431,8 @@ async function submitSubset(event) {
     const { url, body, method } = makeSubsetRequest();
     feedback("submit-status", "Submitting the subset to NASA Harmony…");
     sent = true;
-    const { data } = await requestJson(url, { token, body, method });
+    // Harmony uses Accept to choose the subset file format.
+    const { data } = await requestJson(url, { token, body, method, accept: "*/*" });
     if (!JOB_ID.test(data.jobID)) throw new Error("Harmony did not return a job ID.");
     state.jobRequest?.abort();
     $("job-id").value = data.jobID;
