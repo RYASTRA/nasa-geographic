@@ -394,14 +394,16 @@ function makeSubsetRequest() {
   const { bounds, start, end } = state.filters;
   const capabilities = state.capabilities;
   const shape = capabilities.shapeSubset && $("shape").files[0];
-  const variables = capabilities.variableSubset ? $("variables").value.trim() : "";
+  const variables = capabilities.variableSubset
+    ? $("variables").value.split(",").map(value => value.trim()).filter(Boolean)
+    : [];
   const format = $("output-format").value;
   const maxResults = $("max-results").value;
   if (!state.selectedGranule && ((bounds && !capabilities.bboxSubset && !shape) ||
       ((start || end) && !capabilities.temporalSubset))) {
     throw new Error("Choose a matching source file or change the filters before submitting.");
   }
-  const coverage = variables ? "parameter_vars" : "all";
+  const coverage = variables.length ? "parameter_vars" : "all";
   const url = urlFor(HARMONY, `/${state.selection.id}/ogc-api-coverages/1.0.0/collections/${coverage}/coverage/rangeset`);
   const params = new URLSearchParams({ forceAsync: "true", maxResults, ignoreErrors: "false" });
   if (bounds && capabilities.bboxSubset && !shape) {
@@ -413,7 +415,7 @@ function makeSubsetRequest() {
     const to = end ? `"${end}"` : "*";
     params.append("subset", `time(${from}:${to})`);
   }
-  if (variables) params.set("variable", variables.split(",").map((value) => value.trim()).filter(Boolean).join(","));
+  for (const variable of variables) params.append("variable", variable);
   if (format) params.set("format", format);
   if (state.selectedGranule) params.set("granuleId", state.selectedGranule.id);
 
