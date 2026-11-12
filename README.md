@@ -1,6 +1,6 @@
 # NASA Geographic
 
-[Open NASA Geographic](https://ryastra.github.io/nasa-geographic/) to find NASA
+[Open NASA Geographic](https://geographic.ryastra.org/) to find NASA
 LiDAR observations and download subsets for your study area. The site is part of
 the independent [RYASTRA NASA data fleet](https://observatory.ryastra.org/).
 
