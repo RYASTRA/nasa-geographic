@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#050812">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://cmr.earthdata.nasa.gov https://harmony.earthdata.nasa.gov; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <meta name="description" content="Find, subset, and download NASA LiDAR data from GEDI and ICESat-2 using NASA Earthdata.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="NASA Geographic">
+  <meta property="og:description" content="Explore LiDAR data from GEDI and ICESat-2.">
+  <meta property="og:url" content="https://ryastra.github.io/nasa-geographic/">
+  <meta property="og:image" content="https://ryastra.github.io/nasa-geographic/assets/ryastra-logo-1024.png">
+  <link rel="canonical" href="https://ryastra.github.io/nasa-geographic/">
+  <link rel="icon" href="assets/ryastra-logo-1024.png" type="image/png" sizes="1024x1024">
+  <link rel="stylesheet" href="assets/app.css">
+  <script src="assets/app.js" defer></script>
+  <title>NASA Geographic — LiDAR data explorer</title>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="./">NASA <strong>Geographic</strong></a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#explore">Explore</a>
+        <a href="#harmony">Subset data</a>
+        <a href="https://observatory.ryastra.org/">Observatory <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero shell" aria-labelledby="hero-title">
+      <div class="hero__content">
+        <p class="eyebrow">NASA Earthdata · LiDAR explorer</p>
+        <h1 id="hero-title">See Earth <em>in elevation.</em></h1>
+        <p class="hero__lede">Find LiDAR observations from GEDI and ICESat-2. Choose an area and date range, then use NASA Harmony to subset the files for your work.</p>
+        <div class="actions">
+          <a class="button button--primary" href="#explore">Explore LiDAR data</a>
+          <a class="button" href="#explore" id="load-example">Try an Oregon example</a>
+        </div>
+      </div>
+      <figure class="hero__image">
+        <img src="assets/gedi-pacific-northwest.png" width="720" height="545" alt="Landsat image of the Cowlitz River in Washington with a GEDI track showing forest canopy heights.">
+        <figcaption>GEDI track, Pacific Northwest · <a href="https://science.nasa.gov/earth/earth-observatory/a-new-measuring-stick-for-forests-146203/">NASA Earth Observatory / Lauren Dauphin</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="explore" class="workspace shell" aria-labelledby="explore-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CMR Search</p>
+          <h2 id="explore-title">Find LiDAR observations</h2>
+        </div>
+        <p>Search NASA’s Earthdata catalog, then select a collection to see its matching files.</p>
+      </div>
+      <form id="search-form" class="panel">
+        <div class="fields fields--search">
+          <label>LiDAR product
+            <select id="product" name="product">
+              <option value="GEDI02_A">GEDI L2A · Elevation and canopy height</option>
+              <option value="GEDI02_B">GEDI L2B · Canopy cover and structure</option>
+              <option value="GEDI01_B">GEDI L1B · Geolocated waveforms</option>
+              <option value="ATL03">ICESat-2 ATL03 · Photon elevations</option>
+              <option value="ATL08">ICESat-2 ATL08 · Land and vegetation</option>
+              <option value="ATL06">ICESat-2 ATL06 · Land ice elevation</option>
+              <option value="custom">Other Earthdata collection</option>
+            </select>
+          </label>
+          <label id="keyword-label" hidden>Collection keyword or short name
+            <input id="keyword" name="keyword" type="search" maxlength="120" placeholder="e.g. GLLIDARPC">
+          </label>
+        </div>
+        <div class="filter-grid">
+          <fieldset aria-describedby="coordinates-help">
+            <legend>Bounding box</legend>
+            <div class="fields fields--bounds">
+              <label>West<input id="west" name="west" type="number" step="any" min="-180" max="180" placeholder="-123"></label>
+              <label>South<input id="south" name="south" type="number" step="any" min="-90" max="90" placeholder="44"></label>
+              <label>East<input id="east" name="east" type="number" step="any" min="-180" max="180" placeholder="-122"></label>
+              <label>North<input id="north" name="north" type="number" step="any" min="-90" max="90" placeholder="45"></label>
+            </div>
+            <p class="hint" id="coordinates-help">Optional. Enter all four coordinates in decimal degrees (WGS 84).</p>
+          </fieldset>
+          <fieldset>
+            <legend>Acquisition dates (UTC)</legend>
+            <div class="fields fields--dates">
+              <label>Start<input id="start" name="start" type="date"></label>
+              <label>End<input id="end" name="end" type="date"></label>
+            </div>
+            <p class="hint">Optional. Both dates are inclusive.</p>
+          </fieldset>
+        </div>
+        <div class="actions">
+          <button type="submit" class="button button--primary" id="search-button">Search collections</button>
+          <a href="https://search.earthdata.nasa.gov/search" class="text-link">Open Earthdata Search <span aria-hidden="true">↗</span></a>
+        </div>
+      </form>
+      <p class="feedback" id="search-status" role="status"></p>
+      <div id="collections" class="collection-grid" aria-label="Matching collections"></div>
+      <button type="button" class="button button--compact" id="more-collections" hidden>Load more collections</button>
+
+      <section id="granules" class="panel granules" aria-labelledby="granules-title" hidden>
+        <div class="panel-head">
+          <div>
+            <h3 id="granules-title" tabindex="-1">Matching files</h3>
+            <p class="feedback" id="granule-status" role="status"></p>
+          </div>
+          <a href="#harmony" class="button button--compact">Prepare a subset ↓</a>
+        </div>
+        <ul id="granule-list" class="file-list"></ul>
+        <button type="button" class="button button--compact" id="more-granules" hidden>Load more files</button>
+      </section>
+    </section>
+
+    <section id="harmony" class="workspace shell" aria-labelledby="harmony-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">NASA Harmony</p>
+          <h2 id="harmony-title">Subset and download</h2>
+        </div>
+        <p>Check what the collection supports, start a job, and download the files when NASA finishes processing them.</p>
+      </div>
+      <div class="harmony-grid">
+        <form id="subset-form" class="panel">
+          <h3>New subset</h3>
+          <p id="selected-collection" class="feedback">Select a collection in the search results.</p>
+          <p id="subset-filters" class="hint"></p>
+          <label for="earthdata-token">Earthdata Login token</label>
+          <div class="input-action">
+            <input id="earthdata-token" type="password" autocomplete="off" spellcheck="false" aria-describedby="token-help">
+            <button type="button" class="button button--compact" id="clear-token">Clear</button>
+          </div>
+          <p class="hint" id="token-help"><a href="https://urs.earthdata.nasa.gov/profile" target="_blank" rel="noopener noreferrer">Generate a token in Earthdata Login <span aria-hidden="true">↗</span></a>. Your browser sends it directly to NASA Harmony for this session.</p>
+          <div class="actions">
+            <button type="button" class="button button--compact" id="check-capabilities" disabled>Check supported options</button>
+            <a id="earthdata-collection" class="text-link" hidden>Open collection in Earthdata <span aria-hidden="true">↗</span></a>
+          </div>
+          <p class="feedback" id="capabilities-status" role="status"></p>
+          <ul class="capabilities" id="capabilities-list" hidden></ul>
+          <div id="subset-options" hidden>
+            <div class="fields fields--dates">
+              <label id="format-label">Output format<select id="output-format"><option value="">Collection default</option></select></label>
+              <label>Maximum input files
+                <input id="max-results" type="number" min="1" max="100" value="5" required>
+              </label>
+            </div>
+            <label id="variable-label" hidden>Variable IDs or names (optional)
+              <input id="variables" placeholder="Separate variables with commas" aria-describedby="variables-help">
+              <span class="hint" id="variables-help"></span>
+            </label>
+            <details id="variable-details" hidden>
+              <summary>Show available variables</summary>
+              <ul id="variable-list" class="variable-list"></ul>
+            </details>
+            <label id="shape-label" hidden>Clip to a polygon (optional)
+              <input id="shape" type="file" accept=".geojson,.json,.zip,.shz,.kml">
+              <span class="hint">GeoJSON, shapefile ZIP, or KML. This replaces the bounding box when supplied.</span>
+            </label>
+            <button type="submit" class="button button--primary" id="submit-subset">Submit Harmony job</button>
+          </div>
+          <p class="feedback" id="submit-status" role="status"></p>
+        </form>
+        <form id="job-form" class="panel">
+          <h3>Job status and files</h3>
+          <p class="hint">Paste a job ID to revisit an earlier Harmony request.</p>
+          <label for="job-id">Harmony job ID</label>
+          <div class="input-action">
+            <input id="job-id" spellcheck="false" autocomplete="off" required>
+            <button type="submit" class="button button--compact" id="check-job">Check status</button>
+          </div>
+          <p class="feedback" id="job-status" role="status"></p>
+          <progress id="job-progress" max="100" aria-label="Harmony job progress" hidden></progress>
+          <div class="actions">
+            <button type="button" class="button button--compact" id="resume-job" hidden>Resume job</button>
+            <button type="button" class="button button--compact" id="cancel-job" hidden>Cancel job</button>
+            <a id="workflow-link" href="https://harmony.earthdata.nasa.gov/workflow-ui" target="_blank" rel="noopener noreferrer">Open Harmony Workflow UI <span aria-hidden="true">↗</span></a>
+          </div>
+          <ul id="output-list" class="file-list"></ul>
+          <div class="actions" id="job-output-pagination" hidden>
+            <button type="button" class="button button--compact" id="previous-output">Previous files</button>
+            <button type="button" class="button button--compact" id="next-output">More files</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <noscript>
+      <p class="shell panel">Enable JavaScript to use the explorer, or open <a href="https://search.earthdata.nasa.gov/search">NASA Earthdata Search</a> directly.</p>
+    </noscript>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner shell">
+      <div>
+        <a class="brand" href="./">NASA <strong>Geographic</strong></a>
+        <p>An independent RYASTRA project using public NASA Earthdata.</p>
+      </div>
+      <nav aria-label="Project resources">
+        <a href="https://github.com/RYASTRA/nasa-geographic">Source ↗</a>
+        <a href="https://github.com/RYASTRA/nasa-mcp">NASA MCP ↗</a>
+        <a href="https://cmr.earthdata.nasa.gov/search/">CMR Search ↗</a>
+        <a href="https://harmony.earthdata.nasa.gov/docs">Harmony docs ↗</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
